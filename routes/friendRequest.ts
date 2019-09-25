@@ -103,4 +103,40 @@ router.post(
   }
 );
 
+/**
+ * @route   GET friend-request/outgoing
+ * @desc    Get list of all outgoing friend requests without a response
+ * @access  Private
+ */
+router.get('/outgoing', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      // Get all pending outgoing friend requests
+      const outgoingRequests = await FriendRequest.find({ requester: user._id, status: 0 })
+      return res.status(200).json({ outgoingRequests });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/**
+ * @route   GET friend-request/incoming
+ * @desc    Get list of all incoming friend requests without a response
+ * @access  Private
+ */
+router.get('/incoming', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      // Get all pending incoming friend requests
+      const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 })
+      return res.status(200).json({ incomingRequests });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
 export default router;
