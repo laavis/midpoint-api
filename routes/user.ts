@@ -4,7 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import * as passport from 'passport';
 import validateRegisterInput from '../validation/register';
 import validateLoginInput from '../validation/login';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 
 const router = Router();
 
@@ -29,9 +29,14 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       return res.status(400).json(errors);
     }
 
-    const user = await User.findOne({ email: req.body.email }).exec();
-    // Check if user already exists
-    if (user) return res.status(400).json({ email: 'Email already exists' });
+    const userEmail = await User.findOne({ email: req.body.email }).exec();
+    // Check if user with same email already exists
+    if (userEmail) return res.status(400).json({ email: 'Email already exists' });
+
+    const username = await User.findOne({ username: req.body.username }).exec();
+
+    if (username) return res.status(400).json({ username: 'Username is already taken' });
+
     // Create new user
     const newUser = new User({
       username: req.body.username,
@@ -109,8 +114,9 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
  * @access  Private
  */
 router.get('/current', passport.authenticate('jwt', { session: false }), (req: Request, res: Response) => {
+  const user = req.user as IUser;
   res.json({
-    id: req.user
+    id: user._id
   });
 });
 

@@ -1,17 +1,27 @@
 import * as mongoose from 'mongoose';
 
-interface IUser {
+export interface IUser {
+  _id: mongoose.Types.ObjectId;
   email: string;
   username: string;
   password: string;
-  friends: [mongoose.Types.ObjectId];
+  friendsList: [mongoose.Types.ObjectId];
 }
 
 const UserSchema = new mongoose.Schema({
-  email: String,
-  username: String,
-  password: String,
-  friends: [mongoose.Types.ObjectId]
+  email: {
+    type: String,
+    required: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  friendsList: [mongoose.Types.ObjectId]
 });
 
 const User = mongoose.model<IUser & mongoose.Document>('User', UserSchema);

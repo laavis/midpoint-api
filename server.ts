@@ -7,6 +7,8 @@ import validateEnv from './utils/validateEnv';
 import configurePassport from './config/passport';
 
 import user from './routes/user';
+import friendRequest from './routes/friendRequest';
+import search from './routes/search';
 
 validateEnv();
 
@@ -25,6 +27,8 @@ mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`, {
 });
 
 app.use('/user', user);
+app.use('/search', search);
+app.use('/friend-request', friendRequest);
 
 app.listen(process.env.PORT, () => {
   console.log(`App listening on port ${process.env.PORT}`);
