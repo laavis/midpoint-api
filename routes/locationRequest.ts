@@ -119,7 +119,7 @@ router.get('/outgoing', passport.authenticate('jwt', { session: false }),
     try {
       const user = req.user as IUser;
       // Get all outgoing location requests
-      const outgoingRequests = await LocationRequest.find({ requester: user._id })
+      const outgoingRequests = await LocationRequest.find({ requester: user._id }).exec()
       return res.status(200).json({ outgoingRequests });
     } catch (e) {
       next(e);
@@ -137,8 +137,27 @@ router.get('/incoming', passport.authenticate('jwt', { session: false }),
     try {
       const user = req.user as IUser;
       // Get all pending incoming location requests
-      const incomingRequests = await LocationRequest.find({ receiver: user._id })
+      const incomingRequests = await LocationRequest.find({ receiver: user._id }).exec()
       return res.status(200).json({ incomingRequests });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+
+/**
+ * @route   GET location-request/all
+ * @desc    Get list of all location requests of the current user
+ * @access  Private
+ */
+router.get('/all', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      // Get all pending incoming location requests
+      const requests = await LocationRequest.find({$or:[{receiver: user._id},{requester: user._id}]}).exec()
+      return res.status(200).json({ requests });
     } catch (e) {
       next(e);
     }
