@@ -114,7 +114,18 @@ router.get('/outgoing', passport.authenticate('jwt', { session: false }),
       const user = req.user as IUser;
       // Get all pending outgoing friend requests
       const outgoingRequests = await FriendRequest.find({ requester: user._id, status: 0 })
-      return res.status(200).json({ outgoingRequests });
+      const requests = []
+      for (const request of outgoingRequests) {
+        const copy = {} as any
+        copy._id = request._id
+        copy.requester = request.requester
+        copy.receiver = request.receiver
+        copy.status = request.status
+        const user = await User.findById(request.receiver, {username:1})
+        copy.receiverUsername = user.username
+        requests.push(copy)
+      }
+      return res.status(200).json({ requests });
     } catch (e) {
       next(e);
     }
@@ -132,7 +143,18 @@ router.get('/incoming', passport.authenticate('jwt', { session: false }),
       const user = req.user as IUser;
       // Get all pending incoming friend requests
       const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 })
-      return res.status(200).json({ incomingRequests });
+      const requests = []
+      for (const request of incomingRequests) {
+        const copy = {} as any
+        copy._id = request._id
+        copy.requester = request.requester
+        copy.receiver = request.receiver
+        copy.status = request.status
+        const user = await User.findById(request.requester, {username:1})
+        copy.requesterUsername = user.username
+        requests.push(copy)
+      }
+      return res.status(200).json({ requests });
     } catch (e) {
       next(e);
     }
