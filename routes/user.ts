@@ -116,7 +116,10 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 router.get('/current', passport.authenticate('jwt', { session: false }), (req: Request, res: Response) => {
   const user = req.user as IUser;
   res.json({
-    id: user._id
+    id: user._id,
+    username: user.username,
+    friendsList: user.friendsList,
+    email: user.email
   });
 });
 
