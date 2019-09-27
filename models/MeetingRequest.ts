@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-export interface ILocationRequest {
+export interface IMeetingRequest {
   _id: mongoose.Types.ObjectId;
   requester: mongoose.Types.ObjectId;
   receiver: mongoose.Types.ObjectId;
@@ -13,7 +13,7 @@ export interface ILocationRequest {
   meetingPointLng: string;
 }
 
-const LocationRequestSchema = new mongoose.Schema({
+const MeetingRequestSchema = new mongoose.Schema({
   requester: mongoose.Types.ObjectId,
   receiver: mongoose.Types.ObjectId,
   status: Number,
@@ -25,6 +25,6 @@ const LocationRequestSchema = new mongoose.Schema({
   meetingPointLng: String,
 });
 
-const LocationRequest = mongoose.model<ILocationRequest & mongoose.Document>('LocationRequest', LocationRequestSchema);
+const MeetingRequest = mongoose.model<IMeetingRequest & mongoose.Document>('MeetingRequest', MeetingRequestSchema);
 
-export default LocationRequest;
+export default MeetingRequest;

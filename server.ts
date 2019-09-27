@@ -9,7 +9,7 @@ import configurePassport from './config/passport';
 import user from './routes/user';
 import friendRequest from './routes/friendRequest';
 import search from './routes/search';
-import locationRequest from './routes/locationRequest'
+import meetingRequest from './routes/meetingRequest'
 
 validateEnv();
 
@@ -30,7 +30,7 @@ mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`, {
 app.use('/user', user);
 app.use('/search', search);
 app.use('/friend-request', friendRequest);
-app.use('/location-request/', locationRequest)
+app.use('/meeting-request/', meetingRequest)
 
 app.listen(process.env.PORT, () => {
   console.log(`App listening on port ${process.env.PORT}`);
