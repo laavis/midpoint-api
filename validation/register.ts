@@ -15,11 +15,11 @@ function validateRegisterInput(data: any) {
   data.confirm_password = !isEmpty(data.confirm_password) ? data.confirm_password : '';
 
   if (!Validator.isLength(data.username, { min: 2, max: 64 })) {
-    errors.name = 'Username must be between 2 and 64 characters';
+    errors.username = 'Username must be between 2 and 64 characters';
   }
 
   if (Validator.isEmpty(data.username)) {
-    errors.name = 'Username field is required';
+    errors.username = 'Username field is required';
   }
 
   if (Validator.isEmpty(data.email)) {
@@ -39,11 +39,11 @@ function validateRegisterInput(data: any) {
   }
 
   if (Validator.isEmpty(data.confirm_password)) {
-    errors.confirmPassword = 'Confirm Password field is required';
+    errors.confirm_password = 'Confirm Password field is required';
   }
 
   if (!Validator.equals(data.password, data.confirm_password)) {
-    errors.confirmPassword = 'Passwords must match';
+    errors.confirm_password = 'Passwords must match';
   }
 
   return {

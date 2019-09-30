@@ -26,16 +26,17 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 
     // Check validation
     if (!isValid) {
-      return res.status(400).json(errors);
+      console.log('not valid');
+      return res.json(errors);
     }
 
     const userEmail = await User.findOne({ email: req.body.email }).exec();
     // Check if user with same email already exists
-    if (userEmail) return res.status(400).json({ email: 'Email already exists' });
+    if (userEmail) return res.json({ email: 'Email already exists' });
 
     const username = await User.findOne({ username: req.body.username }).exec();
 
-    if (username) return res.status(400).json({ username: 'Username is already taken' });
+    if (username) return res.json({ username: 'Username is already taken' });
 
     // Create new user
     const newUser = new User({
@@ -51,7 +52,10 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
         newUser.password = hash;
         newUser.password = hash;
         const savedUser = await newUser.save();
-        return res.json(savedUser);
+        return res.json({
+          success: true,
+          user: savedUser
+        });
       });
     });
   } catch (error) {
@@ -68,7 +72,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     // Check validation
     if (!isValid) {
-      return res.status(400).json(errors);
+      console.log('LOGIN not valid');
+      return res.json(errors);
     }
 
     const email = req.body.email;
@@ -80,7 +85,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     // Check for user
     if (!savedUser) {
       errors.email = 'User not found';
-      return res.status(404).json(errors);
+      return res.json(errors);
     }
     // Check password
     bcrypt.compare(password, savedUser.password).then(isMatch => {
@@ -95,12 +100,13 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 3600 }, (_, token) => {
           res.json({
             success: true,
+            user: savedUser,
             token: `Bearer ${token}`
           });
         });
       } else {
         errors.password = 'Invalid credentials';
-        return res.status(400).json(errors);
+        return res.json(errors);
       }
     });
   } catch (error) {
