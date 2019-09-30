@@ -119,10 +119,18 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
  * @desc    Return current user (whoever the JWT belongs to)
  * @access  Private
  */
-router.get('/current', passport.authenticate('jwt', { session: false }), (req: Request, res: Response) => {
+router.get('/current', passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   const user = req.user as IUser;
+  const friends = [];
+  for (const userId of user.friendsList) {
+    const friend = await User.findById(userId, {username: 1}).exec();
+    friends.push(friend);
+  };
   res.json({
-    id: user._id
+    id: user._id,
+    username: user.username,
+    friendsList: friends,
+    email: user.email
   });
 });
 
