@@ -13,9 +13,15 @@ router.get(
   passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const searchTerm = req.query.username;
+      const searchTerm = req.body.username;
+
+      if (!searchTerm.length) {
+        return res.json({ users: [] });
+      }
+
       const matchingUsers = await User.find({ username: { $regex: searchTerm } }, { username: 1, _id: 1 });
-      return res.status(200).json({ users: matchingUsers });
+
+      return res.json({ users: matchingUsers });
     } catch (e) {
       next(e);
     }
