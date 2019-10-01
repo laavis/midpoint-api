@@ -68,18 +68,18 @@ router.post(
       const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
 
       if (user._id.toHexString() !== meetingRequest.receiver.toHexString()) {
-        return res.sendStatus(400);
+        return res.json("Could not find request");
       }
 
       // location of the reciever
-      const lat = req.body.lat
-      const lng = req.body.lng
-      if (!lat || !lng) res.status(400).json('Missing lat or lng')
+      const lat = req.body.lat;
+      const lng = req.body.lng;
+      if (!lat || !lng) res.status(401).json('Missing lat or lng');
 
       // midpoint
-      const midLat = req.body.middleLat
-      const midLng = req.body.middleLng
-      if (!lat || !lng) res.status(400).json('Missing middleLat or middleLng')
+      const midLat = req.body.middleLat;
+      const midLng = req.body.middleLng;
+      if (!midLat || !midLng) res.status(402).json('Missing middleLat or middleLng');
 
       meetingRequest.status = status;
       if (meetingRequest.status === 0) return res.json('Missing response code')
@@ -88,10 +88,10 @@ router.post(
         return res.json({ msg: 'meeting request declined' });
       }
 
-      meetingRequest.recieverLat = lat
-      meetingRequest.recieverLng = lng
-      meetingRequest.meetingPointLat = midLat
-      meetingRequest.meetingPointLng = midLng
+      meetingRequest.recieverLat = lat;
+      meetingRequest.recieverLng = lng;
+      meetingRequest.meetingPointLat = midLat;
+      meetingRequest.meetingPointLng = midLng;
 
       const requester = await User.findById({ _id: meetingRequest.requester }).exec();
 
@@ -156,8 +156,30 @@ router.get('/all', passport.authenticate('jwt', { session: false }),
     try {
       const user = req.user as IUser;
       // Get all pending incoming meeting requests
-      const requests = await MeetingRequest.find({$or:[{receiver: user._id},{requester: user._id}]}).exec()
-      return res.status(200).json({ requests });
+      var requests = await MeetingRequest.find({ $or: [{ receiver: user._id }, { requester: user._id }] }).exec();
+      requests = requests as any;
+      const response = []
+      for (const request of requests) {
+        const receiver = await User.findById(request.receiver, { username: 1 }).exec();
+        const requester = await User.findById(request.requester, { username: 1 }).exec();
+        var copy = {
+          _id: request._id,
+          requester: request.requester,
+          requesterUsername: requester.username,
+          receiver: request.receiver,
+          receiverUsername: receiver.username,
+          status: request.status,
+          requesterLat: request.requesterLat,
+          requesterLng: request.requesterLng,
+          __v: request.__v,
+          meetingPointLat: request.meetingPointLat,
+          meetingPointLng: request.meetingPointLng,
+          recieverLat: request.recieverLat,
+          recieverLng: request.recieverLng
+        };
+        response.push(copy)
+      }
+      return res.status(200).json({ requests: response });
     } catch (e) {
       next(e);
     }
