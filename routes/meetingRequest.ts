@@ -110,6 +110,28 @@ router.post(
 );
 
 /**
+ * @route   GET meeting-request/delete
+ * @desc    Deletes meeting request
+ * @access  Private
+ */
+router.post('/delete', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      const requestId = req.body.requestId;
+      const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
+      if (!meetingRequest.requester.equals(user._id)){
+        return res.json({errors: 'No permission'})
+      }
+      await MeetingRequest.findByIdAndDelete({_id: requestId}).exec();
+      return res.status(200).json({msg: 'Request deleted' });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/**
  * @route   GET meeting-request/outgoing
  * @desc    Get list of all outgoing meeting requests
  * @access  Private
