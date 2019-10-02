@@ -175,7 +175,8 @@ router.get('/all', passport.authenticate('jwt', { session: false }),
           meetingPointLat: request.meetingPointLat,
           meetingPointLng: request.meetingPointLng,
           recieverLat: request.recieverLat,
-          recieverLng: request.recieverLng
+          recieverLng: request.recieverLng,
+          timestamp: request.timestamp
         };
         response.push(copy)
       }
