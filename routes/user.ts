@@ -123,9 +123,9 @@ router.get('/current', passport.authenticate('jwt', { session: false }), async (
   const user = req.user as IUser;
   const friends = [];
   for (const userId of user.friendsList) {
-    const friend = await User.findById(userId, {username: 1}).exec();
+    const friend = await User.findById(userId, { username: 1 }).exec();
     friends.push(friend);
-  };
+  }
   res.json({
     id: user._id,
     username: user.username,

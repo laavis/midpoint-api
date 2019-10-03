@@ -13,7 +13,8 @@ router.get(
   passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const searchTerm = req.body.username;
+      console.log(req.query, req.params, req.body);
+      const searchTerm = req.query.username;
 
       if (!searchTerm.length) {
         return res.json({ users: [] });

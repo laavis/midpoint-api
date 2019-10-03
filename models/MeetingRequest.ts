@@ -22,7 +22,7 @@ const MeetingRequestSchema = new mongoose.Schema({
   recieverLat: String,
   recieverLng: String,
   meetingPointLat: String,
-  meetingPointLng: String,
+  meetingPointLng: String
 });
 
 const MeetingRequest = mongoose.model<IMeetingRequest & mongoose.Document>('MeetingRequest', MeetingRequestSchema);
