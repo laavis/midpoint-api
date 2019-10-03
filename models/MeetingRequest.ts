@@ -11,6 +11,7 @@ export interface IMeetingRequest {
   recieverLng: string;
   meetingPointLat: string;
   meetingPointLng: string;
+  meetingPointName: string;
   timestamp: Date;
 }
 
@@ -24,6 +25,7 @@ const MeetingRequestSchema = new mongoose.Schema({
   recieverLng: String,
   meetingPointLat: String,
   meetingPointLng: String,
+  meetingPointName: String,
   timestamp: { type: Date, default: Date.now }
 });
 

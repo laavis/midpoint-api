@@ -39,13 +39,13 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
-      if (!requester.friendsList.includes(receiver._id)) return res.json({errors:'Receiver is not your friend : ('});
-      if (!receiver) return res.json({errors: 'User not found'});
+      if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
+      if (!receiver) return res.json({ errors: 'User not found' });
 
       // location of the requester
       const lat = req.body.lat;
       const lng = req.body.lng;
-      if (!lat || !lng) return res.json({errors: 'Missing lat or lng'});
+      if (!lat || !lng) return res.json({ errors: 'Missing lat or lng' });
 
       const newMeetingRequest = new MeetingRequest({
         requester: requester._id,
@@ -57,7 +57,7 @@ router.post(
 
       return newMeetingRequest
         .save()
-        .then(MeetingRequest => res.json(MeetingRequest))
+        .then(MeetingRequest => res.json({ msg: 'Request send successfully', MeetingRequest }))
         .catch(console.error);
     } catch (e) {
       next(e);
@@ -83,7 +83,7 @@ router.post(
       const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
 
       if (user._id.toHexString() !== meetingRequest.receiver.toHexString()) {
-        return res.json('Could not find request');
+        return res.json({ errors: 'Could not find request' });
       }
 
       // location of the reciever
@@ -94,10 +94,12 @@ router.post(
       // midpoint
       const midLat = req.body.middleLat;
       const midLng = req.body.middleLng;
-      if (!midLat || !midLng) return res.json('Missing middleLat or middleLng');
+      if (!midLat || !midLng) return res.json({ errors: 'Missing middleLat or middleLng' });
 
+      const meetingPointName = req.body.middlePointName;
+      if (!meetingPointName) return res.json({ errors: 'Missing meeting point name' })
       meetingRequest.status = status;
-      if (meetingRequest.status === 0) return res.json('Missing response code');
+      if (meetingRequest.status === 0) return res.json({ errors: 'Missing response code' });
       // Declined
       if (meetingRequest.status === 2) {
         return res.json({ msg: 'meeting request declined' });
@@ -119,7 +121,8 @@ router.post(
         msg: 'ok',
         accepted: true,
         middlePointLat: midLat,
-        middlePointLng: midLng
+        middlePointLng: midLng,
+        middlePointName: meetingPointName
       });
     } catch (e) {
       next(e);
@@ -138,11 +141,11 @@ router.post('/delete', passport.authenticate('jwt', { session: false }),
       const user = req.user as IUser;
       const requestId = req.body.requestId;
       const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
-      if (!meetingRequest.requester.equals(user._id)){
-        return res.json({errors: 'No permission'})
+      if (!meetingRequest.requester.equals(user._id)) {
+        return res.json({ errors: 'No permission' })
       }
-      await MeetingRequest.findByIdAndDelete({_id: requestId}).exec();
-      return res.json({msg: 'Request deleted' });
+      await MeetingRequest.findByIdAndDelete({ _id: requestId }).exec();
+      return res.json({ msg: 'Request deleted' });
     } catch (e) {
       next(e);
     }
@@ -219,6 +222,7 @@ router.get(
           __v: request.__v,
           meetingPointLat: request.meetingPointLat,
           meetingPointLng: request.meetingPointLng,
+          meetingPointName: request.meetingPointName,
           recieverLat: request.recieverLat,
           recieverLng: request.recieverLng,
           timestamp: request.timestamp
