@@ -39,6 +39,8 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
+      console.log(receiver)
+      console.log(requester)
       if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
       if (!receiver) return res.json({ errors: 'User not found' });
 
@@ -104,6 +106,9 @@ router.post(
       if (meetingRequest.status === 2) {
         return res.json({ msg: 'meeting request declined' });
       }
+
+      meetingRequest.recieverLat = lat;
+      meetingRequest.recieverLng = lng;
 
       meetingRequest.meetingPointLat = midLat;
       meetingRequest.meetingPointLng = midLng;
