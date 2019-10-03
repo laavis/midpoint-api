@@ -39,12 +39,13 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
-      if (!receiver) res.json('User not found');
+      if (!requester.friendsList.includes(receiver._id)) return res.json({errors:'Receiver is not your friend : ('});
+      if (!receiver) return res.json({errors: 'User not found'});
 
       // location of the requester
       const lat = req.body.lat;
       const lng = req.body.lng;
-      if (!lat || !lng) res.json('Missing lat or lng');
+      if (!lat || !lng) return res.json({errors: 'Missing lat or lng'});
 
       const newMeetingRequest = new MeetingRequest({
         requester: requester._id,
@@ -88,12 +89,12 @@ router.post(
       // location of the reciever
       const lat = req.body.lat;
       const lng = req.body.lng;
-      if (!lat || !lng) res.json('Missing lat or lng');
+      if (!lat || !lng) return res.json('Missing lat or lng');
 
       // midpoint
       const midLat = req.body.middleLat;
       const midLng = req.body.middleLng;
-      if (!midLat || !midLng) res.json('Missing middleLat or middleLng');
+      if (!midLat || !midLng) return res.json('Missing middleLat or middleLng');
 
       meetingRequest.status = status;
       if (meetingRequest.status === 0) return res.json('Missing response code');
@@ -141,7 +142,7 @@ router.post('/delete', passport.authenticate('jwt', { session: false }),
         return res.json({errors: 'No permission'})
       }
       await MeetingRequest.findByIdAndDelete({_id: requestId}).exec();
-      return res.status(200).json({msg: 'Request deleted' });
+      return res.json({msg: 'Request deleted' });
     } catch (e) {
       next(e);
     }
