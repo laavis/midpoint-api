@@ -11,6 +11,7 @@ export interface IMeetingRequest {
   recieverLng: string;
   meetingPointLat: string;
   meetingPointLng: string;
+  timestamp: Date;
 }
 
 const MeetingRequestSchema = new mongoose.Schema({
@@ -22,7 +23,8 @@ const MeetingRequestSchema = new mongoose.Schema({
   recieverLat: String,
   recieverLng: String,
   meetingPointLat: String,
-  meetingPointLng: String
+  meetingPointLng: String,
+  timestamp: { type: Date, default: Date.now }
 });
 
 const MeetingRequest = mongoose.model<IMeetingRequest & mongoose.Document>('MeetingRequest', MeetingRequestSchema);
