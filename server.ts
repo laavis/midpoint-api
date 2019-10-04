@@ -3,6 +3,7 @@ import * as express from 'express';
 import * as mongoose from 'mongoose';
 import * as bodyParser from 'body-parser';
 import * as passport from 'passport';
+import * as admin from 'firebase-admin';
 import validateEnv from './utils/validateEnv';
 import configurePassport from './config/passport';
 
@@ -20,6 +21,10 @@ app.use(bodyParser.json());
 app.use(passport.initialize());
 
 configurePassport(passport);
+admin.initializeApp({
+  credential: admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+  databaseURL: 'https://my-project-1548072053798.firebaseio.com'
+});
 
 const { MONGO_USER, MONGO_PASSWORD, MONGO_PATH } = process.env;
 mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`, {

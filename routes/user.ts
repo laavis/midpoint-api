@@ -115,7 +115,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 /**
- * @route   POST users/current
+ * @route   POST user/current
  * @desc    Return current user (whoever the JWT belongs to)
  * @access  Private
  */
@@ -133,5 +133,26 @@ router.get('/current', passport.authenticate('jwt', { session: false }), async (
     email: user.email
   });
 });
+
+/**
+ * @route   POST user/updateToken
+ * @desc    Update the current user's token
+ * @access  Private
+ */
+router.post('/updateToken', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      const token = req.body.firebaseToken;
+      if (!token) return res.json({success: false, errors:'Missing firebase token'});
+      const updateUser = await User.findByIdAndUpdate({_id: user._id}, {firebaseToken: token}).exec();
+      updateUser.save();
+      return res.json({ success: true, msg: 'Token successfully updated'});
+    }
+    catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

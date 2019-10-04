@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, request } from 'express';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as passport from 'passport';
+import * as admin from 'firebase-admin';
 import User, { IUser } from '../models/User';
 import MeetingRequest from '../models/MeetingRequest';
 import { resolveSoa } from 'dns';
@@ -41,7 +42,7 @@ router.post(
       const receiver = await User.findOne({ username }).exec();
       console.log(receiver)
       console.log(requester)
-      if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
+      //if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
       if (!receiver) return res.json({ errors: 'User not found' });
 
       // location of the requester
@@ -57,6 +58,30 @@ router.post(
         requesterLng: lng
       });
 
+      // This registration token comes from the client FCM SDKs.
+      var registrationToken = receiver.firebaseToken;
+      if (!registrationToken) return res.json({ success: false, errors: 'User has no token' });
+      var message = {
+        data: {
+          meetingRequest: newMeetingRequest.toString(),
+        },
+        notification: {
+          body: `${requester.username} wants to meet`,
+          title: 'Midpoint'
+        },
+        token: registrationToken
+      };
+
+      // Send a message to the device corresponding to the provided
+      // registration token.
+      admin.messaging().send(message)
+        .then((response) => {
+          // Response is a message ID string.
+          console.log('Successfully sent message:', response);
+        })
+        .catch((error) => {
+          console.log('Error sending message:', error);
+        })
       return newMeetingRequest
         .save()
         .then(MeetingRequest => res.json({ msg: 'Request send successfully', MeetingRequest }))
@@ -120,6 +145,30 @@ router.post(
       console.log(requester);
 
       // Accepted
+      // This registration token comes from the client FCM SDKs.
+      var registrationToken = requester.firebaseToken;
+      if (!registrationToken) return res.json({ success: false, errors: 'User has no token' });
+      var message = {
+        data: {
+          meetingRequest: meetingRequest.toString(),
+        },
+        notification: {
+          body: `${receiver.username} accepted your request!`,
+          title: 'Midpoint'
+        },
+        token: registrationToken
+      };
+
+      // Send a message to the device corresponding to the provided
+      // registration token.
+      admin.messaging().send(message)
+        .then((response) => {
+          // Response is a message ID string.
+          console.log('Successfully sent message:', response);
+        })
+        .catch((error) => {
+          console.log('Error sending message:', error);
+        })
 
       meetingRequest.save();
       return res.json({
