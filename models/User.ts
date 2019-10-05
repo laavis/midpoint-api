@@ -6,6 +6,7 @@ export interface IUser {
   username: string;
   password: string;
   friendsList: [mongoose.Types.ObjectId];
+  firebaseToken: string;
 }
 
 const UserSchema = new mongoose.Schema({
@@ -21,7 +22,8 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  friendsList: [mongoose.Types.ObjectId]
+  friendsList: [mongoose.Types.ObjectId],
+  firebaseToken: String
 });
 
 const User = mongoose.model<IUser & mongoose.Document>('User', UserSchema);
