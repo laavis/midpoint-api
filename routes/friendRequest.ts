@@ -1,10 +1,7 @@
 import { Router, Request, Response, NextFunction, request } from 'express';
-import * as bcrypt from 'bcryptjs';
-import * as jwt from 'jsonwebtoken';
 import * as passport from 'passport';
 import User, { IUser } from '../models/User';
 import FriendRequest from '../models/FriendRequest';
-import { resolveSoa } from 'dns';
 
 const router = Router();
 
@@ -27,7 +24,7 @@ router.post(
 
       const receiver = await User.findOne({ username }).exec();
 
-      if (!receiver) res.status(404).json('User not found');
+      if (!receiver) res.json('User not found');
 
       const friendRequest = await FriendRequest.findOne({
         requester: requester._id,
@@ -39,6 +36,7 @@ router.post(
       }
 
       const newFriendRequest = new FriendRequest({
+        success: true,
         requester: requester._id,
         receiver: receiver._id,
         status: 0
@@ -108,22 +106,24 @@ router.post(
  * @desc    Get list of all outgoing friend requests without a response
  * @access  Private
  */
-router.get('/outgoing', passport.authenticate('jwt', { session: false }),
+router.get(
+  '/outgoing',
+  passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
       // Get all pending outgoing friend requests
-      const outgoingRequests = await FriendRequest.find({ requester: user._id, status: 0 }).exec()
-      const requests = []
+      const outgoingRequests = await FriendRequest.find({ requester: user._id, status: 0 }).exec();
+      const requests = [];
       for (const request of outgoingRequests) {
-        const copy = {} as any
-        copy._id = request._id
-        copy.requester = request.requester
-        copy.receiver = request.receiver
-        copy.status = request.status
-        const user = await User.findById(request.receiver, {username:1}).exec()
-        copy.receiverUsername = user.username
-        requests.push(copy)
+        const copy = {} as any;
+        copy._id = request._id;
+        copy.requester = request.requester;
+        copy.receiver = request.receiver;
+        copy.status = request.status;
+        const user = await User.findById(request.receiver, { username: 1 }).exec();
+        copy.receiverUsername = user.username;
+        requests.push(copy);
       }
       return res.status(200).json({ requests });
     } catch (e) {
@@ -137,22 +137,24 @@ router.get('/outgoing', passport.authenticate('jwt', { session: false }),
  * @desc    Get list of all incoming friend requests without a response
  * @access  Private
  */
-router.get('/incoming', passport.authenticate('jwt', { session: false }),
+router.get(
+  '/incoming',
+  passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
       // Get all pending incoming friend requests
-      const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 }).exec()
-      const requests = []
+      const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 }).exec();
+      const requests = [];
       for (const request of incomingRequests) {
-        const copy = {} as any
-        copy._id = request._id
-        copy.requester = request.requester
-        copy.receiver = request.receiver
-        copy.status = request.status
-        const user = await User.findById(request.requester, {username:1}).exec()
-        copy.requesterUsername = user.username
-        requests.push(copy)
+        const copy = {} as any;
+        copy._id = request._id;
+        copy.requester = request.requester;
+        copy.receiver = request.receiver;
+        copy.status = request.status;
+        const user = await User.findById(request.requester, { username: 1 }).exec();
+        copy.requesterUsername = user.username;
+        requests.push(copy);
       }
       return res.status(200).json({ requests });
     } catch (e) {

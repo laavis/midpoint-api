@@ -1,13 +1,15 @@
 import * as mongoose from 'mongoose';
 
 export interface IFriendRequest {
+  success: Boolean;
   _id: mongoose.Types.ObjectId;
   requester: mongoose.Types.ObjectId;
   receiver: mongoose.Types.ObjectId;
-  status: number;
+  status: Number;
 }
 
 const FriendRequestSchema = new mongoose.Schema({
+  success: Boolean,
   requester: mongoose.Types.ObjectId,
   receiver: mongoose.Types.ObjectId,
   status: Number
