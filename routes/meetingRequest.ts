@@ -63,7 +63,7 @@ router.post(
       if (!registrationToken) return res.json({ success: false, errors: 'User has no token' });
       var message = {
         data: {
-          meetingRequest: newMeetingRequest.toString(),
+          meetingRequest: JSON.stringify(newMeetingRequest),
         },
         notification: {
           body: `${requester.username} wants to meet`,
@@ -150,7 +150,7 @@ router.post(
       if (!registrationToken) return res.json({ success: false, errors: 'User has no token' });
       var message = {
         data: {
-          meetingRequest: meetingRequest.toString(),
+          meetingRequest: JSON.stringify(meetingRequest),
         },
         notification: {
           body: `${receiver.username} accepted your request!`,
