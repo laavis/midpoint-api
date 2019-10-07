@@ -29,6 +29,13 @@ const MeetingRequestSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+export enum MeetingRequestStatus {
+  NO_RESPONSE = 0,
+  ACCEPTED = 1,
+  REJECTED = 2,
+  ACCEPTED_SHOW_LOCATION = 3
+}
+
 const MeetingRequest = mongoose.model<IMeetingRequest & mongoose.Document>('MeetingRequest', MeetingRequestSchema);
 
 export default MeetingRequest;

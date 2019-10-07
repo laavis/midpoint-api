@@ -4,7 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import * as passport from 'passport';
 import * as admin from 'firebase-admin';
 import User, { IUser } from '../models/User';
-import MeetingRequest from '../models/MeetingRequest';
+import MeetingRequest, { MeetingRequestStatus } from '../models/MeetingRequest';
 import { resolveSoa } from 'dns';
 
 const router = Router();
@@ -179,6 +179,66 @@ router.post(
     }
   }
 );
+
+/**
+ * @route   POST meeting-request/decline
+ * @desc    Respond to meeting request
+ * @access  Private
+ */
+router.post(
+  '/decline',
+  passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+
+      const requestId = req.body.requestId;
+      if (!requestId) {
+        return res.json({ errors: 'Could not find request' });
+      }
+      const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
+
+      if (user._id.toHexString() !== meetingRequest.receiver.toHexString()) {
+        return res.json({ errors: 'Could not find request' });
+      }
+
+      meetingRequest.status = MeetingRequestStatus.REJECTED;
+      const requester = await User.findById({ _id: meetingRequest.requester }).exec();
+
+      // This registration token comes from the client FCM SDKs.
+      var registrationToken = requester.firebaseToken;
+      if (registrationToken) {
+        var message = {
+          notification: {
+            body: `${user.username} declined your request`,
+            title: 'Midpoint'
+          },
+          token: registrationToken
+        };
+
+        // Send a message to the device corresponding to the provided
+        // registration token.
+        admin.messaging().send(message)
+          .then((response) => {
+            // Response is a message ID string.
+            console.log('Successfully sent message:', response);
+          })
+          .catch((error) => {
+            console.log('Error sending message:', error);
+          })
+      }
+
+      meetingRequest.save();
+      return res.json({
+        success: true,
+        msg: 'Meeting declined',
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
 
 /**
  * @route   GET meeting-request/delete
