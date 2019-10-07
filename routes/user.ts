@@ -96,8 +96,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
           username: savedUser.username
         }; // Create JWT payload
 
-        // Sign token
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 3600 }, (_, token) => {
+        // Sign token that expires in 24h
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 86400 }, (_, token) => {
           res.json({
             success: true,
             user: savedUser,
@@ -139,17 +139,18 @@ router.get('/current', passport.authenticate('jwt', { session: false }), async (
  * @desc    Update the current user's token
  * @access  Private
  */
-router.post('/updateToken', passport.authenticate('jwt', { session: false }),
+router.post(
+  '/updateToken',
+  passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
       const token = req.body.firebaseToken;
-      if (!token) return res.json({success: false, errors:'Missing firebase token'});
-      const updateUser = await User.findByIdAndUpdate({_id: user._id}, {firebaseToken: token}).exec();
+      if (!token) return res.json({ success: false, errors: 'Missing firebase token' });
+      const updateUser = await User.findByIdAndUpdate({ _id: user._id }, { firebaseToken: token }).exec();
       updateUser.save();
-      return res.json({ success: true, msg: 'Token successfully updated'});
-    }
-    catch (error) {
+      return res.json({ success: true, msg: 'Token successfully updated' });
+    } catch (error) {
       next(error);
     }
   }
