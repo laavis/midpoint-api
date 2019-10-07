@@ -8,7 +8,42 @@ const router = Router();
 router.get('/test', (req: Request, res: Response) => res.json({ msg: 'FriendRequest works' }));
 
 /**
- * @route   POST friend-request/request
+ * @route   GET friends/friendlist
+ * @desc    Get current users friend list
+ * @access  Private
+ */
+router.get('/list', passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+  const user = req.user as IUser;
+
+  // Get all pending incoming friend requests
+  const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 }).exec();
+  const requests = [];
+
+  for (const request of incomingRequests) {
+    const copy = {} as any;
+    copy._id = request._id;
+    copy.requester = request.requester;
+    copy.receiver = request.receiver;
+    copy.status = request.status;
+    const user = await User.findById(request.requester, { username: 1 }).exec();
+    copy.requester_username = user.username;
+    requests.push(copy);
+  }
+
+  const friends = [];
+  for (const userId of user.friendsList) {
+    const friend = await User.findById(userId, { username: 1 }).exec();
+    friends.push(friend);
+  }
+
+  res.json({
+    requests,
+    friends
+  });
+});
+
+/**
+ * @route   POST friends/request
  * @desc    Send friend request with user id
  * @access  Private
  */
@@ -64,8 +99,10 @@ router.post(
     try {
       const user = req.user as IUser;
 
-      const status = req.body.response;
-      const requestId = req.body.requestId;
+      const status = req.body.status;
+      const requestId = req.body.request_id;
+
+      console.log(status, requestId);
 
       const friendRequest = await FriendRequest.findById({ _id: requestId }).exec();
 
@@ -75,18 +112,22 @@ router.post(
 
       friendRequest.status = status;
 
+      console.log(friendRequest);
+
       // Declined
       if (friendRequest.status === 2) {
-        return res.json({ msg: 'Friend request declined' });
+        FriendRequest.findByIdAndDelete({ _id: requestId }).exec();
+        console.log(friendRequest);
+
+        return res.json({
+          success: true,
+          msg: 'Friend request declined'
+        });
       }
 
       const requester = await User.findById({ _id: friendRequest.requester }).exec();
-
       const receiver = await User.findById({ _id: user._id }).exec();
-      console.log(receiver);
-      console.log(requester);
 
-      // Accepted
       receiver.friendsList.push(friendRequest.requester);
       requester.friendsList.push(friendRequest.receiver);
 
@@ -94,7 +135,7 @@ router.post(
       receiver.save();
       requester.save();
 
-      return res.status(200).json({ msg: 'yee' });
+      return res.json({ success: true });
     } catch (e) {
       next(e);
     }
@@ -153,10 +194,10 @@ router.get(
         copy.receiver = request.receiver;
         copy.status = request.status;
         const user = await User.findById(request.requester, { username: 1 }).exec();
-        copy.requesterUsername = user.username;
+        copy.requester_username = user.username;
         requests.push(copy);
       }
-      return res.status(200).json({ requests });
+      return res.json({ requests });
     } catch (e) {
       next(e);
     }
