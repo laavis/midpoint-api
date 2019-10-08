@@ -314,7 +314,11 @@ router.get(
     try {
       const user = req.user as IUser;
       // Get all pending incoming meeting requests
-      var requests = await MeetingRequest.find({ $or: [{ receiver: user._id }, { requester: user._id }] }).exec();
+      var requests = await MeetingRequest.find( {
+        $and: [
+          { $or: [{ receiver: user._id }, { requester: user._id }]},
+          { status: {$ne: 2}}
+        ]}).exec();
       requests = requests as any;
       const response = [];
       for (const request of requests) {
