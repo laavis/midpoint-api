@@ -13,6 +13,8 @@ export interface IMeetingRequest {
   meetingPointLng: string;
   meetingPointName: string;
   timestamp: Date;
+  requesterArrived: boolean;
+  receiverArrived: boolean;
 }
 
 const MeetingRequestSchema = new mongoose.Schema({
@@ -26,7 +28,9 @@ const MeetingRequestSchema = new mongoose.Schema({
   meetingPointLat: String,
   meetingPointLng: String,
   meetingPointName: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  requesterArrived: { type: Boolean, default: false },
+  receiverArrived: { type: Boolean, default: false },
 });
 
 export enum MeetingRequestStatus {

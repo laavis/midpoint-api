@@ -31,6 +31,7 @@ mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
+mongoose.set('useFindAndModify', false);
 
 app.use('/user', user);
 app.use('/search', search);

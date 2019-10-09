@@ -251,11 +251,72 @@ router.post('/delete', passport.authenticate('jwt', { session: false }),
       const user = req.user as IUser;
       const requestId = req.body.requestId;
       const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
-      if (!meetingRequest.requester.equals(user._id)) {
-        return res.json({ errors: 'No permission' })
+      if (meetingRequest === null) return res.json({ msg: 'Request deleted' });
+      if (meetingRequest.requester.equals(user._id) || meetingRequest.receiver.equals(user._id)) {
+        await MeetingRequest.findByIdAndDelete({ _id: requestId }).exec();
+      } else {
+        return res.json({ errors: 'No permission' });
       }
-      await MeetingRequest.findByIdAndDelete({ _id: requestId }).exec();
       return res.json({ msg: 'Request deleted' });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/**
+ * @route   GET meeting-request/arrive
+ * @desc    Sets arrived property & optionally sends notification
+ * @access  Private
+ */
+router.post('/arrive', passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+      const requestId = req.body.requestId;
+      const sendNotif = req.body.notify;
+      const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
+      var token;
+      var username;
+      if (user._id.equals(meetingRequest.requester)) {
+        const receiver = await User.findById(meetingRequest.receiver).exec();
+        token = receiver.firebaseToken;
+        meetingRequest.requesterArrived = true;
+      } else {
+        const requester = await User.findById(meetingRequest.requester).exec();
+        token = requester.firebaseToken;
+        meetingRequest.receiverArrived = true;
+      }
+      if (token && sendNotif !== 0) {
+        var message = {
+          notification: {
+            body: `${user.username} arrived at the meeting point!`,
+            title: 'Midpoint'
+          },
+          token: token
+        };
+
+        // Send a message to the device corresponding to the provided
+        // registration token.
+        admin.messaging().send(message)
+          .then((response) => {
+            // Response is a message ID string.
+            console.log('Successfully sent message:', response);
+          })
+          .catch((error) => {
+            console.log('Error sending message:', error);
+          })
+      }
+      if (meetingRequest.requesterArrived && meetingRequest.receiverArrived) {
+        try {
+          await MeetingRequest.findByIdAndDelete(meetingRequest.id).exec()
+        } catch (error) {
+
+        }
+      } else {
+        meetingRequest.save();
+      }
+      return res.json({ msg: 'Updated arrival status' });
     } catch (e) {
       next(e);
     }
@@ -314,7 +375,17 @@ router.get(
     try {
       const user = req.user as IUser;
       // Get all pending incoming meeting requests
-      var requests = await MeetingRequest.find({ $or: [{ receiver: user._id }, { requester: user._id }] }).exec();
+      var requests = await MeetingRequest.find({
+        $and: [
+          {
+            $or: [
+              { $and: [{ receiver: user._id }, { receiverArrived: { $ne: true } }] },
+              { $and: [{ requester: user._id }, { requesterArrived: { $ne: true } }] }
+            ]
+          },
+          { status: { $ne: 2 } }
+        ]
+      }).exec();
       requests = requests as any;
       const response = [];
       for (const request of requests) {
@@ -335,7 +406,9 @@ router.get(
           meetingPointName: request.meetingPointName,
           recieverLat: request.recieverLat,
           recieverLng: request.recieverLng,
-          timestamp: request.timestamp
+          timestamp: request.timestamp,
+          requesterArrived: request.requesterArrived,
+          receiverArrived: request.receiverArrived
         };
         response.push(copy);
       }
