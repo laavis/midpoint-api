@@ -126,6 +126,7 @@ router.post(
 
       const meetingPointName = req.body.middlePointName;
       //if (!meetingPointName) return res.json({ errors: 'Missing meeting point name' })
+      meetingRequest.meetingPointName = meetingPointName;
       meetingRequest.status = status;
       if (meetingRequest.status === 0) return res.json({ errors: 'Missing response code' });
       // Declined
