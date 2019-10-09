@@ -40,8 +40,6 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
-      console.log(receiver)
-      console.log(requester)
       //if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
       if (!receiver) return res.json({ errors: 'User not found' });
 
@@ -63,7 +61,7 @@ router.post(
       if (registrationToken) {
         var message = {
           data: {
-            meetingRequest: JSON.stringify(newMeetingRequest),
+            meetingRequest: JSON.stringify(newMeetingRequest)
           },
           notification: {
             body: `${requester.username} wants to meet`,
@@ -74,14 +72,16 @@ router.post(
 
         // Send a message to the device corresponding to the provided
         // registration token.
-        admin.messaging().send(message)
-          .then((response) => {
+        admin
+          .messaging()
+          .send(message)
+          .then(response => {
             // Response is a message ID string.
             console.log('Successfully sent message:', response);
           })
-          .catch((error) => {
+          .catch(error => {
             console.log('Error sending message:', error);
-          })
+          });
       }
       return newMeetingRequest
         .save()
@@ -156,14 +156,16 @@ router.post(
 
         // Send a message to the device corresponding to the provided
         // registration token.
-        admin.messaging().send(message)
-          .then((response) => {
+        admin
+          .messaging()
+          .send(message)
+          .then(response => {
             // Response is a message ID string.
             console.log('Successfully sent message:', response);
           })
-          .catch((error) => {
+          .catch(error => {
             console.log('Error sending message:', error);
-          })
+          });
       }
 
       meetingRequest.save();
@@ -218,20 +220,22 @@ router.post(
 
         // Send a message to the device corresponding to the provided
         // registration token.
-        admin.messaging().send(message)
-          .then((response) => {
+        admin
+          .messaging()
+          .send(message)
+          .then(response => {
             // Response is a message ID string.
             console.log('Successfully sent message:', response);
           })
-          .catch((error) => {
+          .catch(error => {
             console.log('Error sending message:', error);
-          })
+          });
       }
 
       meetingRequest.save();
       return res.json({
         success: true,
-        msg: 'Meeting declined',
+        msg: 'Meeting declined'
       });
     } catch (e) {
       next(e);
@@ -239,13 +243,14 @@ router.post(
   }
 );
 
-
 /**
  * @route   GET meeting-request/delete
  * @desc    Deletes meeting request
  * @access  Private
  */
-router.post('/delete', passport.authenticate('jwt', { session: false }),
+router.post(
+  '/delete',
+  passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
@@ -269,7 +274,9 @@ router.post('/delete', passport.authenticate('jwt', { session: false }),
  * @desc    Sets arrived property & optionally sends notification
  * @access  Private
  */
-router.post('/arrive', passport.authenticate('jwt', { session: false }),
+router.post(
+  '/arrive',
+  passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
@@ -298,21 +305,21 @@ router.post('/arrive', passport.authenticate('jwt', { session: false }),
 
         // Send a message to the device corresponding to the provided
         // registration token.
-        admin.messaging().send(message)
-          .then((response) => {
+        admin
+          .messaging()
+          .send(message)
+          .then(response => {
             // Response is a message ID string.
             console.log('Successfully sent message:', response);
           })
-          .catch((error) => {
+          .catch(error => {
             console.log('Error sending message:', error);
-          })
+          });
       }
       if (meetingRequest.requesterArrived && meetingRequest.receiverArrived) {
         try {
-          await MeetingRequest.findByIdAndDelete(meetingRequest.id).exec()
-        } catch (error) {
-
-        }
+          await MeetingRequest.findByIdAndDelete(meetingRequest.id).exec();
+        } catch (error) {}
       } else {
         meetingRequest.save();
       }

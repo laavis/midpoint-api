@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction, request } from 'express';
 import * as passport from 'passport';
+import * as admin from 'firebase-admin';
 import User, { IUser } from '../models/User';
 import FriendToken, { IFriendToken } from '../models/FriendToken';
 import FriendRequest from '../models/FriendRequest';
@@ -57,10 +58,11 @@ router.post(
 
       // username of the receiver
       const username = req.body.receiver;
-
       const receiver = await User.findOne({ username }).exec();
 
-      if (!receiver) res.json('User not found');
+      if (!receiver) return res.json('User not found');
+
+      const registrationToken = receiver.firebaseToken;
 
       const friendRequest = await FriendRequest.findOne({
         requester: requester._id,
@@ -77,6 +79,32 @@ router.post(
         receiver: receiver._id,
         status: 0
       });
+
+      if (registrationToken) {
+        var message = {
+          data: {
+            friendRequest: JSON.stringify(newFriendRequest)
+          },
+          notification: {
+            body: `${requester.username} sent you a friend request`,
+            title: 'Midpoint'
+          },
+          token: registrationToken
+        };
+
+        // Send a message to the device corresponding to the provided
+        // registration token.
+        admin
+          .messaging()
+          .send(message)
+          .then(response => {
+            // Response is a message ID string.
+            console.log('Successfully sent message:', response);
+          })
+          .catch(error => {
+            console.log('Error sending message:', error);
+          });
+      }
 
       return newFriendRequest
         .save()
@@ -111,17 +139,54 @@ router.post(
 
       friendRequest.status = status;
 
+      const requester = await User.findById({ _id: friendRequest.requester }).exec();
+      const receiver = await User.findById({ _id: user._id }).exec();
+      const registrationToken = requester.firebaseToken;
+
+      let message;
+
       // Declined
       if (friendRequest.status === 2) {
         FriendRequest.findByIdAndDelete({ _id: requestId }).exec();
+
+        message = {
+          notification: {
+            body: `${receiver.username} denied your friend request`,
+            title: 'Midpoint'
+          },
+          token: registrationToken || null
+        };
+
         return res.json({
           success: true,
           msg: 'Friend request declined'
         });
       }
 
-      const requester = await User.findById({ _id: friendRequest.requester }).exec();
-      const receiver = await User.findById({ _id: user._id }).exec();
+      message = {
+        notification: {
+          body: `${receiver.username} accepted your friend request!`,
+          title: 'Midpoint'
+        },
+        token: registrationToken || null
+      };
+
+      if (registrationToken) {
+        const msg = message;
+
+        // Send a message to the device corresponding to the provided
+        // registration token.
+        admin
+          .messaging()
+          .send(msg)
+          .then(response => {
+            // Response is a message ID string.
+            console.log('Successfully sent message:', response);
+          })
+          .catch(error => {
+            console.log('Error sending message:', error);
+          });
+      }
 
       receiver.friendsList.push(friendRequest.requester);
       requester.friendsList.push(friendRequest.receiver);
@@ -131,6 +196,56 @@ router.post(
       await requester.save();
 
       return res.json({ success: true });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/**
+ * @route   POST friend-request/respond
+ * @desc    Delete friend
+ * @access  Private
+ */
+router.post(
+  '/delete',
+  passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+
+      const friendUsername = req.body.friend_username;
+
+      const remover = await User.findOne({ _id: user._id }).exec();
+      const friendToBeRemoved = await User.findOne({ username: friendUsername }).exec();
+
+      if (!remover || !friendToBeRemoved) return res.send({ error: 'Something went wrong' });
+
+      const ftbrFriendList = friendToBeRemoved.friendsList;
+      const userFriendList = remover.friendsList;
+
+      // Remove user from friend's list
+      const fIndex = ftbrFriendList.indexOf(user._id);
+      if (fIndex > -1) ftbrFriendList.splice(fIndex, 1);
+
+      // Remove friend from user's list
+      const uIndex = userFriendList.indexOf(friendToBeRemoved._id);
+      if (uIndex > -1) userFriendList.splice(uIndex, 1);
+
+      await FriendRequest.findOneAndRemove({
+        requester: user._id,
+        receiver: friendToBeRemoved._id
+      }).exec();
+
+      await FriendRequest.findOneAndRemove({
+        requester: friendToBeRemoved._id,
+        receiver: user._id
+      }).exec();
+
+      await remover.save();
+      await friendToBeRemoved.save();
+
+      return res.json({ error: null });
     } catch (e) {
       next(e);
     }
