@@ -251,10 +251,12 @@ router.post('/delete', passport.authenticate('jwt', { session: false }),
       const user = req.user as IUser;
       const requestId = req.body.requestId;
       const meetingRequest = await MeetingRequest.findById({ _id: requestId }).exec();
-      if (!meetingRequest.requester.equals(user._id)) {
-        return res.json({ errors: 'No permission' })
+      if (meetingRequest === null) return res.json({ msg: 'Request deleted' });
+      if (meetingRequest.requester.equals(user._id) || meetingRequest.receiver.equals(user._id)) {
+        await MeetingRequest.findByIdAndDelete({ _id: requestId }).exec();
+      } else {
+        return res.json({ errors: 'No permission' });
       }
-      await MeetingRequest.findByIdAndDelete({ _id: requestId }).exec();
       return res.json({ msg: 'Request deleted' });
     } catch (e) {
       next(e);
@@ -307,8 +309,8 @@ router.post('/arrive', passport.authenticate('jwt', { session: false }),
       }
       if (meetingRequest.requesterArrived && meetingRequest.receiverArrived) {
         try {
-          await MeetingRequest.findByIdAndDelete( meetingRequest.id ).exec()
-        } catch (error){
+          await MeetingRequest.findByIdAndDelete(meetingRequest.id).exec()
+        } catch (error) {
 
         }
       } else {
@@ -377,8 +379,8 @@ router.get(
         $and: [
           {
             $or: [
-              { $and: [{ receiver: user._id }, { receiverArrived: {$ne: true} }] },
-              { $and: [{ requester: user._id }, { requesterArrived: {$ne: true} }] }
+              { $and: [{ receiver: user._id }, { receiverArrived: { $ne: true } }] },
+              { $and: [{ requester: user._id }, { requesterArrived: { $ne: true } }] }
             ]
           },
           { status: { $ne: 2 } }
