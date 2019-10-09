@@ -40,6 +40,7 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
+      const status = req.body.status;
       console.log(receiver)
       console.log(requester)
       //if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
@@ -53,7 +54,7 @@ router.post(
       const newMeetingRequest = new MeetingRequest({
         requester: requester._id,
         receiver: receiver._id,
-        status: 0,
+        status: status,
         requesterLat: lat,
         requesterLng: lng
       });
