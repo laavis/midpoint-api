@@ -40,6 +40,8 @@ router.post(
       // username of the receiver
       const username = req.body.receiver;
       const receiver = await User.findOne({ username }).exec();
+      const status = req.body.status;
+
       //if (!requester.friendsList.includes(receiver._id)) return res.json({ errors: 'Receiver is not your friend : (' });
       if (!receiver) return res.json({ errors: 'User not found' });
 
@@ -51,7 +53,7 @@ router.post(
       const newMeetingRequest = new MeetingRequest({
         requester: requester._id,
         receiver: receiver._id,
-        status: 0,
+        status: status,
         requesterLat: lat,
         requesterLng: lng
       });
@@ -126,6 +128,7 @@ router.post(
 
       const meetingPointName = req.body.middlePointName;
       //if (!meetingPointName) return res.json({ errors: 'Missing meeting point name' })
+      meetingRequest.meetingPointName = meetingPointName;
       meetingRequest.status = status;
       if (meetingRequest.status === 0) return res.json({ errors: 'Missing response code' });
       // Declined
