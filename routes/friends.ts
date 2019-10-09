@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction, request } from 'express';
 import * as passport from 'passport';
 import User, { IUser } from '../models/User';
+import FriendToken, { IFriendToken } from '../models/FriendToken';
 import FriendRequest from '../models/FriendRequest';
 
 const router = Router();
@@ -102,8 +103,6 @@ router.post(
       const status = req.body.status;
       const requestId = req.body.request_id;
 
-      console.log(status, requestId);
-
       const friendRequest = await FriendRequest.findById({ _id: requestId }).exec();
 
       if (user._id.toHexString() !== friendRequest.receiver.toHexString()) {
@@ -112,13 +111,9 @@ router.post(
 
       friendRequest.status = status;
 
-      console.log(friendRequest);
-
       // Declined
       if (friendRequest.status === 2) {
         FriendRequest.findByIdAndDelete({ _id: requestId }).exec();
-        console.log(friendRequest);
-
         return res.json({
           success: true,
           msg: 'Friend request declined'
@@ -131,9 +126,9 @@ router.post(
       receiver.friendsList.push(friendRequest.requester);
       requester.friendsList.push(friendRequest.receiver);
 
-      friendRequest.save();
-      receiver.save();
-      requester.save();
+      await friendRequest.save();
+      await receiver.save();
+      await requester.save();
 
       return res.json({ success: true });
     } catch (e) {
@@ -198,6 +193,63 @@ router.get(
         requests.push(copy);
       }
       return res.json({ requests });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+router.get(
+  '/qr/create',
+  passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+
+      const token = await FriendToken.create({ requester: user._id, createdAt: new Date() });
+
+      return res.send({ token: token._id });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+router.post(
+  '/qr/redeem',
+  passport.authenticate('jwt', { session: false }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as IUser;
+
+      const token = await FriendToken.findById(req.body.token).exec();
+      if (!token) return res.send({ error: 'Invalid friend request' });
+
+      if (user._id.toHexString() === token.requester.toHexString()) {
+        return res.send({ error: 'You cannot add yourself as friend :(' });
+      }
+
+      await FriendToken.findByIdAndRemove(token._id).exec();
+
+      const requester = await User.findById({ _id: token.requester }).exec();
+      const receiver = await User.findById({ _id: user._id }).exec();
+
+      if (!receiver.friendsList.includes(requester._id)) {
+        receiver.friendsList.push(requester._id);
+      } else {
+        return res.send({ error: `You are already friends with ${requester.username}` });
+      }
+
+      if (!requester.friendsList.includes(receiver._id)) {
+        requester.friendsList.push(receiver._id);
+      }
+
+      await receiver.save();
+      await requester.save();
+
+      return res.send({
+        requester_username: requester.username
+      });
     } catch (e) {
       next(e);
     }

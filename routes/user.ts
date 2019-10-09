@@ -146,6 +146,7 @@ router.post(
     try {
       const user = req.user as IUser;
       const token = req.body.firebaseToken;
+
       if (!token) return res.json({ success: false, errors: 'Missing firebase token' });
       const updateUser = await User.findByIdAndUpdate({ _id: user._id }, { firebaseToken: token }).exec();
       updateUser.save();

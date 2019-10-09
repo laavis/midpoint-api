@@ -51,7 +51,7 @@ router.get(
           searchResults.push({
             _id: user.id,
             username: user.username,
-            isFriend: friendRequest.status === 1,
+            isFriend: searcher.friendsList.includes(user._id),
             isRequestSent: !!friendRequest
           });
         } else {
