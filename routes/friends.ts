@@ -50,9 +50,6 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
     const friend = await User.findById(userId, { username: 1 }).exec();
     friends.push(friend);
   }
-  console.log('asd');
-
-  console.log(sentRequests);
 
   res.json({
     received_requests: receivedRequests,
@@ -151,7 +148,7 @@ router.post(
       const friendRequest = await FriendRequest.findById({ _id: requestId }).exec();
 
       if (user._id.toHexString() !== friendRequest.receiver.toHexString()) {
-        return res.sendStatus(400);
+        return res.json({ success: false });
       }
 
       friendRequest.status = status;
@@ -205,11 +202,16 @@ router.post(
           });
       }
 
+      receiver.friendsList.push(friendRequest.requester);
+      requester.friendsList.push(friendRequest.receiver);
+
       await friendRequest.save();
       await receiver.save();
       await requester.save();
 
-      return res.json({ success: true });
+      return res.json({
+        success: true
+      });
     } catch (e) {
       next(e);
     }
