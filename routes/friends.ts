@@ -18,10 +18,13 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
   const user = req.user as IUser;
 
   // Get all pending incoming friend requests
-  const incomingRequests = await FriendRequest.find({ receiver: user._id, status: 0 }).exec();
-  const requests = [];
+  const incomingFriendRequests = await FriendRequest.find({ receiver: user._id, status: 0 }).exec();
+  const sentFriendRequests = await FriendRequest.find({ requester: user._id, status: 0 }).exec();
+  const receivedRequests = [];
+  const sentRequests = [];
+  const friends = [];
 
-  for (const request of incomingRequests) {
+  for (const request of incomingFriendRequests) {
     const copy = {} as any;
     copy._id = request._id;
     copy.requester = request.requester;
@@ -29,17 +32,28 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
     copy.status = request.status;
     const user = await User.findById(request.requester, { username: 1 }).exec();
     copy.requester_username = user.username;
-    requests.push(copy);
+    receivedRequests.push(copy);
   }
 
-  const friends = [];
+  for (const request of sentFriendRequests) {
+    const copy = {} as any;
+    copy._id = request._id;
+    copy.requester = request.requester;
+    copy.receiver = request.receiver;
+    copy.status = request.status;
+    const user = await User.findById(request.requester, { username: 1 }).exec();
+    copy.requester_username = user.username;
+    sentRequests.push(copy);
+  }
+
   for (const userId of user.friendsList) {
     const friend = await User.findById(userId, { username: 1 }).exec();
     friends.push(friend);
   }
 
   res.json({
-    requests,
+    receivedRequests: receivedRequests,
+    sentFriendRequests: sentRequests,
     friends
   });
 });
