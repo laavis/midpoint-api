@@ -72,7 +72,6 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     // Check validation
     if (!isValid) {
-      console.log('LOGIN not valid');
       return res.json(errors);
     }
 
@@ -135,19 +134,22 @@ router.get('/current', passport.authenticate('jwt', { session: false }), async (
 });
 
 /**
- * @route   POST user/updateToken
+ * @route   POST user/update/token
  * @desc    Update the current user's token
  * @access  Private
  */
 router.post(
-  '/updateToken',
+  '/update/token',
   passport.authenticate('jwt', { session: false }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as IUser;
       const token = req.body.firebaseToken;
 
-      if (!token) return res.json({ success: false, errors: 'Missing firebase token' });
+      if (!token) {
+        console.log('no token');
+        return res.json({ success: false, errors: 'Missing firebase token' });
+      }
       const updateUser = await User.findByIdAndUpdate({ _id: user._id }, { firebaseToken: token }).exec();
       updateUser.save();
       return res.json({ success: true, msg: 'Token successfully updated' });
