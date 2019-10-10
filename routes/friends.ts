@@ -52,8 +52,8 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
   }
 
   res.json({
-    receivedRequests: receivedRequests,
-    sentFriendRequests: sentRequests,
+    received_requests: receivedRequests,
+    sent_friend_requests: sentRequests,
     friends
   });
 });
