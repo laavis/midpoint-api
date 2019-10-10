@@ -41,8 +41,8 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
     copy.requester = request.requester;
     copy.receiver = request.receiver;
     copy.status = request.status;
-    const user = await User.findById(request.requester, { username: 1 }).exec();
-    copy.requester_username = user.username;
+    const user = await User.findById(request.receiver, { username: 1 }).exec();
+    copy.receiver_username = user.username;
     sentRequests.push(copy);
   }
 
@@ -164,7 +164,7 @@ router.post(
 
       // Declined
       if (friendRequest.status === 2) {
-        FriendRequest.findByIdAndDelete({ _id: requestId }).exec();
+        await FriendRequest.findByIdAndDelete({ _id: requestId }).exec();
 
         message = {
           notification: {
@@ -204,9 +204,6 @@ router.post(
             console.log('Error sending message:', error);
           });
       }
-
-      receiver.friendsList.push(friendRequest.requester);
-      requester.friendsList.push(friendRequest.receiver);
 
       await friendRequest.save();
       await receiver.save();
