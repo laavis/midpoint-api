@@ -50,10 +50,13 @@ router.get('/list', passport.authenticate('jwt', { session: false }), async (req
     const friend = await User.findById(userId, { username: 1 }).exec();
     friends.push(friend);
   }
+  console.log('asd');
+
+  console.log(sentRequests);
 
   res.json({
     received_requests: receivedRequests,
-    sent_friend_requests: sentRequests,
+    sent_requests: sentRequests,
     friends
   });
 });
